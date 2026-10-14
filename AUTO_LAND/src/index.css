@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #b70011;
+  --color-primary-container: #dc2626;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #fff6f5;
+  --color-primary-fixed: #ffdad6;
+  --color-primary-fixed-dim: #ffb4ab;
+  --color-on-primary-fixed: #410002;
+  --color-on-primary-fixed-variant: #93000b;
+
+  --color-secondary: #565e74;
+  --color-secondary-container: #dae2fd;
+  --color-on-secondary-container: #5c647a;
+  --color-secondary-fixed: #dae2fd;
+  --color-secondary-fixed-dim: #bec6e0;
+  --color-on-secondary-fixed: #131b2e;
+  --color-on-secondary-fixed-variant: #3f465c;
+
+  --color-tertiary: #005e90;
+  --color-tertiary-container: #0078b6;
+  --color-on-tertiary-container: #f5f8ff;
+  --color-tertiary-fixed: #cce5ff;
+  --color-tertiary-fixed-dim: #93ccff;
+  --color-on-tertiary-fixed: #001d31;
+  --color-on-tertiary-fixed-variant: #004b73;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  --color-background: #f8f9ff;
+  --color-on-background: #0b1c30;
+  --color-surface: #f8f9ff;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #5c403c;
+  --color-surface-variant: #d3e4fe;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-bright: #f8f9ff;
+
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+
+  --color-outline: #916f6b;
+  --color-outline-variant: #e6bdb8;
+  --color-inverse-surface: #213145;
+  --color-inverse-on-surface: #eaf1ff;
+
+  --font-headline-xl: "Manrope", sans-serif;
+  --font-headline-lg: "Manrope", sans-serif;
+  --font-headline-md: "Manrope", sans-serif;
+  --font-headline-sm: "Manrope", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-body-sm: "Inter", sans-serif;
+  --font-label-lg: "Inter", sans-serif;
+  --font-label-md: "Inter", sans-serif;
+  --font-label-sm: "Inter", sans-serif;
+  --font-code-sm: "JetBrains Mono", monospace;
+
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2.5rem;
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    color: #0b1c30;
+    background-color: #f8f9ff;
+  }
+}
+
+/* Custom Typography helpers corresponding to design tokens */
+.font-headline-xl {
+  font-family: 'Manrope', sans-serif;
+  font-size: 36px;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.font-headline-lg {
+  font-family: 'Manrope', sans-serif;
+  font-size: 30px;
+  line-height: 38px;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+.font-headline-md {
+  font-family: 'Manrope', sans-serif;
+  font-size: 22px;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.font-headline-sm {
+  font-family: 'Manrope', sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.font-body-lg {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.005em;
+}
+
+.font-body-md {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.font-body-sm {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.font-label-lg {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+.font-label-md {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.font-label-sm {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.font-code-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: -0.01em;
+}
+
+/* Material symbols outlined styling */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

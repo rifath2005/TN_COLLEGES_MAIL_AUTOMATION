@@ -1,0 +1,12 @@
+{
+  "name": "automation-of-emails",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tamil Nadu Higher Education Email Outreach Automation System",
+  "scripts": {
+    "dev": "npm --prefix AUTO_LAND run dev",
+    "serve": "npm --prefix AUTO_LAND run serve",
+    "build": "npm --prefix AUTO_LAND run build",
+    "lint": "npm --prefix AUTO_LAND run lint"
+  }
+}

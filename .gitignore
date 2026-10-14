@@ -1,0 +1,38 @@
+# Environment files (Never commit secrets!)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Dependencies
+node_modules/
+AUTO_LAND/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production build outputs
+dist/
+AUTO_LAND/dist/
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.swp
+*.swo

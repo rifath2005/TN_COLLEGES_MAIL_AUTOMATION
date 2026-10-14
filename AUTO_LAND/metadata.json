@@ -1,0 +1,6 @@
+{
+  "name": "TN Outreach - Higher Ed Directorate",
+  "description": "Tamil Nadu Higher Education Outreach Directorate portal for institutional campaign management, verified college directory, and automated dispatches.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
