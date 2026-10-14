@@ -204,3 +204,4 @@ git push -u origin main
 
 ## 📄 License & Attribution
 Developed for academic partnership and collegiate collaboration outreach in Tamil Nadu. Ensure institutional outreach conforms with UGC, AICTE, and university communications guidelines.
+# TN_COLLEGES_MAIL_AUTOMATION
