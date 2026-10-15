@@ -1,5 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SystemStats, ActivityFeedItem, NavScreen, CollegeContact } from '../types';
+import {
+  isMissingPhone,
+  isMissingWebsite,
+  isMissingEmail,
+  isMissingAny,
+  isCompleteProfile,
+  getMissingDetailsList
+} from '../utils/completeness';
 
 interface DashboardViewProps {
   stats: SystemStats;
@@ -98,6 +106,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const s = new Set(colleges.map(c => c.district).filter(Boolean));
     return s.size || 38;
   }, [colleges]);
+
+  // Data Completeness & Missing Details State
+  const [dashboardMissingFilter, setDashboardMissingFilter] = useState<'any-missing' | 'no-phone' | 'no-website' | 'no-email' | 'complete'>('any-missing');
+  const [dashboardSortBy, setDashboardSortBy] = useState<'missing-desc' | 'name-asc' | 'name-desc' | 'district-asc'>('missing-desc');
+  const [dashboardPreviewLimit, setDashboardPreviewLimit] = useState<number>(6);
+
+  // Missing details counts
+  const missingPhoneCount = useMemo(() => colleges.filter(isMissingPhone).length, [colleges]);
+  const missingWebsiteCount = useMemo(() => colleges.filter(isMissingWebsite).length, [colleges]);
+  const missingEmailCount = useMemo(() => colleges.filter(isMissingEmail).length, [colleges]);
+  const missingAnyCount = useMemo(() => colleges.filter(isMissingAny).length, [colleges]);
+  const completeCount = useMemo(() => colleges.filter(isCompleteProfile).length, [colleges]);
+
+  const missingPhonePct = Math.round((missingPhoneCount / totalCount) * 100);
+  const missingWebsitePct = Math.round((missingWebsiteCount / totalCount) * 100);
+  const missingEmailPct = Math.round((missingEmailCount / totalCount) * 100);
+  const missingAnyPct = Math.round((missingAnyCount / totalCount) * 100);
+  const completePct = Math.round((completeCount / totalCount) * 100);
+
+  // Filtered colleges for on-dashboard missing preview
+  const missingPreviewColleges = useMemo(() => {
+    let list = colleges.filter(c => {
+      if (dashboardMissingFilter === 'no-phone') return isMissingPhone(c);
+      if (dashboardMissingFilter === 'no-website') return isMissingWebsite(c);
+      if (dashboardMissingFilter === 'no-email') return isMissingEmail(c);
+      if (dashboardMissingFilter === 'complete') return isCompleteProfile(c);
+      return isMissingAny(c); // 'any-missing'
+    });
+
+    return [...list].sort((a, b) => {
+      if (dashboardSortBy === 'name-asc') {
+        return a.name.localeCompare(b.name);
+      }
+      if (dashboardSortBy === 'name-desc') {
+        return b.name.localeCompare(a.name);
+      }
+      if (dashboardSortBy === 'district-asc') {
+        return a.district.localeCompare(b.district);
+      }
+      // 'missing-desc' - colleges with the most missing fields first
+      const countA = (isMissingPhone(a) ? 1 : 0) + (isMissingWebsite(a) ? 1 : 0) + (isMissingEmail(a) ? 1 : 0);
+      const countB = (isMissingPhone(b) ? 1 : 0) + (isMissingWebsite(b) ? 1 : 0) + (isMissingEmail(b) ? 1 : 0);
+      if (countB !== countA) return countB - countA;
+      return a.name.localeCompare(b.name);
+    });
+  }, [colleges, dashboardMissingFilter, dashboardSortBy]);
   const handleExportCSV = () => {
     // Generate simple CSV payload of colleges
     const headers = ['Name', 'District', 'Zone', 'Category', 'AISHE', 'Principal', 'Email', 'Status'];
@@ -396,6 +450,406 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Data Completeness & Missing Details Audit Section */}
+      <section className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-[#e2e8f0] mb-space-lg">
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-md border-b border-[#e2e8f0]">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+              <span className="material-symbols-outlined text-[24px]">fact_check</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                  Data Completeness &amp; Missing Details Audit
+                </h2>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200 uppercase tracking-wide">
+                  TNDCE Scraped Directory
+                </span>
+              </div>
+              <p className="font-body-sm text-body-sm text-secondary mt-0.5">
+                Audit across {totalCount.toLocaleString()} Tamil Nadu collegiate institutions. Identify and filter colleges missing vital phone numbers, official websites, or direct email addresses.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+            <button
+              onClick={() => onNavigate('college-contacts', dashboardMissingFilter)}
+              className="h-9 px-4 rounded-lg bg-primary text-white hover:bg-primary-container font-label-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">travel_explore</span>
+              <span>Inspect in Full Roster ({missingPreviewColleges.length})</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 5 Missing Details Audit Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md my-space-md">
+          {/* Card 1: Without Phone No */}
+          <div
+            onClick={() => setDashboardMissingFilter('no-phone')}
+            className={`p-space-md rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+              dashboardMissingFilter === 'no-phone'
+                ? 'bg-rose-50/70 border-rose-300 ring-2 ring-rose-500/20 shadow-xs'
+                : 'bg-surface-container-low/60 border-[#e2e8f0] hover:bg-surface-container-low hover:border-rose-200'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-rose-800">
+                  Without Phone No
+                </span>
+                <span className="w-6 h-6 rounded-md bg-rose-100 text-rose-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[15px]">phone_disabled</span>
+                </span>
+              </div>
+              <div className="font-headline-md text-headline-md font-bold text-on-surface">
+                {missingPhoneCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-secondary mt-1">
+                {missingPhonePct}% lack verified telephone/landline
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-[#e2e8f0]/60 flex items-center justify-between">
+              <span className={`text-[11px] font-semibold ${dashboardMissingFilter === 'no-phone' ? 'text-rose-700 font-bold' : 'text-secondary'}`}>
+                {dashboardMissingFilter === 'no-phone' ? 'Active Filter • Clicked' : 'Click to Pick'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] text-secondary">arrow_forward</span>
+            </div>
+          </div>
+
+          {/* Card 2: Without Website */}
+          <div
+            onClick={() => setDashboardMissingFilter('no-website')}
+            className={`p-space-md rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+              dashboardMissingFilter === 'no-website'
+                ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-500/20 shadow-xs'
+                : 'bg-surface-container-low/60 border-[#e2e8f0] hover:bg-surface-container-low hover:border-amber-200'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                  Without Website
+                </span>
+                <span className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[15px]">public_off</span>
+                </span>
+              </div>
+              <div className="font-headline-md text-headline-md font-bold text-on-surface">
+                {missingWebsiteCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-secondary mt-1">
+                {missingWebsitePct}% lack official web portal
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-[#e2e8f0]/60 flex items-center justify-between">
+              <span className={`text-[11px] font-semibold ${dashboardMissingFilter === 'no-website' ? 'text-amber-700 font-bold' : 'text-secondary'}`}>
+                {dashboardMissingFilter === 'no-website' ? 'Active Filter • Clicked' : 'Click to Pick'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] text-secondary">arrow_forward</span>
+            </div>
+          </div>
+
+          {/* Card 3: Without Mail ID */}
+          <div
+            onClick={() => setDashboardMissingFilter('no-email')}
+            className={`p-space-md rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+              dashboardMissingFilter === 'no-email'
+                ? 'bg-orange-50/70 border-orange-300 ring-2 ring-orange-500/20 shadow-xs'
+                : 'bg-surface-container-low/60 border-[#e2e8f0] hover:bg-surface-container-low hover:border-orange-200'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-orange-800">
+                  Without Mail ID
+                </span>
+                <span className="w-6 h-6 rounded-md bg-orange-100 text-orange-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[15px]">unsubscribe</span>
+                </span>
+              </div>
+              <div className="font-headline-md text-headline-md font-bold text-on-surface">
+                {missingEmailCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-secondary mt-1">
+                {missingEmailPct}% lack verified direct email
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-[#e2e8f0]/60 flex items-center justify-between">
+              <span className={`text-[11px] font-semibold ${dashboardMissingFilter === 'no-email' ? 'text-orange-700 font-bold' : 'text-secondary'}`}>
+                {dashboardMissingFilter === 'no-email' ? 'Active Filter • Clicked' : 'Click to Pick'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] text-secondary">arrow_forward</span>
+            </div>
+          </div>
+
+          {/* Card 4: Any Missing Detail */}
+          <div
+            onClick={() => setDashboardMissingFilter('any-missing')}
+            className={`p-space-md rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+              dashboardMissingFilter === 'any-missing'
+                ? 'bg-purple-50/70 border-purple-300 ring-2 ring-purple-500/20 shadow-xs'
+                : 'bg-surface-container-low/60 border-[#e2e8f0] hover:bg-surface-container-low hover:border-purple-200'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-purple-800">
+                  Any Incomplete Detail
+                </span>
+                <span className="w-6 h-6 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[15px]">warning</span>
+                </span>
+              </div>
+              <div className="font-headline-md text-headline-md font-bold text-on-surface">
+                {missingAnyCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-secondary mt-1">
+                {missingAnyPct}% flagged for missing channels
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-[#e2e8f0]/60 flex items-center justify-between">
+              <span className={`text-[11px] font-semibold ${dashboardMissingFilter === 'any-missing' ? 'text-purple-700 font-bold' : 'text-secondary'}`}>
+                {dashboardMissingFilter === 'any-missing' ? 'Active Filter • Clicked' : 'Click to Pick'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] text-secondary">arrow_forward</span>
+            </div>
+          </div>
+
+          {/* Card 5: Complete Records */}
+          <div
+            onClick={() => setDashboardMissingFilter('complete')}
+            className={`p-space-md rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+              dashboardMissingFilter === 'complete'
+                ? 'bg-emerald-50/70 border-emerald-300 ring-2 ring-emerald-500/20 shadow-xs'
+                : 'bg-surface-container-low/60 border-[#e2e8f0] hover:bg-surface-container-low hover:border-emerald-200'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                  Complete Profiles
+                </span>
+                <span className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[15px]">verified</span>
+                </span>
+              </div>
+              <div className="font-headline-md text-headline-md font-bold text-emerald-800">
+                {completeCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-secondary mt-1">
+                {completePct}% ready for immediate outreach
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-[#e2e8f0]/60 flex items-center justify-between">
+              <span className={`text-[11px] font-semibold ${dashboardMissingFilter === 'complete' ? 'text-emerald-700 font-bold' : 'text-secondary'}`}>
+                {dashboardMissingFilter === 'complete' ? 'Active Filter • Clicked' : 'Click to Pick'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] text-secondary">arrow_forward</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter and Sort Toolbar */}
+        <div className="bg-surface-container-low/50 p-space-sm rounded-lg border border-[#e2e8f0] flex flex-col sm:flex-row items-center justify-between gap-3 mb-space-sm">
+          {/* Quick Filter Pick Buttons */}
+          <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+            <span className="text-xs font-bold text-secondary uppercase tracking-wider mr-1">
+              Pick Filter:
+            </span>
+            <button
+              onClick={() => setDashboardMissingFilter('any-missing')}
+              className={`px-2.5 py-1 text-xs rounded-md font-semibold transition-all cursor-pointer ${
+                dashboardMissingFilter === 'any-missing'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'bg-white text-secondary hover:text-on-surface border border-[#e2e8f0]'
+              }`}
+            >
+              Any Missing ({missingAnyCount})
+            </button>
+            <button
+              onClick={() => setDashboardMissingFilter('no-phone')}
+              className={`px-2.5 py-1 text-xs rounded-md font-semibold transition-all cursor-pointer ${
+                dashboardMissingFilter === 'no-phone'
+                  ? 'bg-rose-700 text-white shadow-xs'
+                  : 'bg-white text-secondary hover:text-on-surface border border-[#e2e8f0]'
+              }`}
+            >
+              Without Phone ({missingPhoneCount})
+            </button>
+            <button
+              onClick={() => setDashboardMissingFilter('no-website')}
+              className={`px-2.5 py-1 text-xs rounded-md font-semibold transition-all cursor-pointer ${
+                dashboardMissingFilter === 'no-website'
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'bg-white text-secondary hover:text-on-surface border border-[#e2e8f0]'
+              }`}
+            >
+              Without Website ({missingWebsiteCount})
+            </button>
+            <button
+              onClick={() => setDashboardMissingFilter('no-email')}
+              className={`px-2.5 py-1 text-xs rounded-md font-semibold transition-all cursor-pointer ${
+                dashboardMissingFilter === 'no-email'
+                  ? 'bg-orange-700 text-white shadow-xs'
+                  : 'bg-white text-secondary hover:text-on-surface border border-[#e2e8f0]'
+              }`}
+            >
+              Without Mail ID ({missingEmailCount})
+            </button>
+            <button
+              onClick={() => setDashboardMissingFilter('complete')}
+              className={`px-2.5 py-1 text-xs rounded-md font-semibold transition-all cursor-pointer ${
+                dashboardMissingFilter === 'complete'
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-white text-secondary hover:text-on-surface border border-[#e2e8f0]'
+              }`}
+            >
+              Complete Records ({completeCount})
+            </button>
+          </div>
+
+          {/* Sort By Option */}
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <label htmlFor="dashboardSortSelect" className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-1">
+              <span className="material-symbols-outlined text-[16px]">sort</span>
+              <span>Sort By:</span>
+            </label>
+            <select
+              id="dashboardSortSelect"
+              value={dashboardSortBy}
+              onChange={(e) => setDashboardSortBy(e.target.value as any)}
+              className="px-2.5 py-1 bg-white rounded-md text-xs font-semibold text-on-surface border border-[#e2e8f0] focus:outline-none focus:border-primary cursor-pointer shadow-2xs"
+            >
+              <option value="missing-desc">Most Missing Details First</option>
+              <option value="name-asc">College Name (A to Z)</option>
+              <option value="name-desc">College Name (Z to A)</option>
+              <option value="district-asc">District (A to Z)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Preview Roster Table */}
+        <div className="overflow-x-auto rounded-lg border border-[#e2e8f0]">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-surface-container-low/80 border-b border-[#e2e8f0] text-secondary font-label-sm uppercase tracking-wider text-[11px]">
+                <th className="py-2.5 px-3 font-semibold">College Name &amp; Code</th>
+                <th className="py-2.5 px-3 font-semibold">District</th>
+                <th className="py-2.5 px-3 font-semibold">Category</th>
+                <th className="py-2.5 px-3 font-semibold">Missing Details Status</th>
+                <th className="py-2.5 px-3 font-semibold text-right">Quick Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f1f5f9] font-body-sm text-[13px]">
+              {missingPreviewColleges.slice(0, dashboardPreviewLimit).map((college) => {
+                const missingList = getMissingDetailsList(college);
+                const isComplete = missingList.length === 0;
+
+                return (
+                  <tr key={college.id} className="hover:bg-surface-container-low/40 transition-colors">
+                    <td className="py-2.5 px-3">
+                      <div className="flex flex-col">
+                        <span
+                          onClick={() => onSelectCollegeByName(college.name)}
+                          className="font-semibold text-on-surface hover:text-primary cursor-pointer line-clamp-1"
+                          title={college.name}
+                        >
+                          {college.name}
+                        </span>
+                        <span className="font-code-sm text-[10px] text-secondary">
+                          {college.aisheCode}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap text-on-surface font-medium">
+                      {college.district}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap text-secondary text-xs">
+                      {college.category}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {isComplete ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                          All Details Complete
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isMissingPhone(college) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="material-symbols-outlined text-[12px]">phone_disabled</span>
+                              No Phone
+                            </span>
+                          )}
+                          {isMissingWebsite(college) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              <span className="material-symbols-outlined text-[12px]">public_off</span>
+                              No Website
+                            </span>
+                          )}
+                          {isMissingEmail(college) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-800 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">
+                              <span className="material-symbols-outlined text-[12px]">unsubscribe</span>
+                              No Mail ID
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => onSelectCollegeByName(college.name)}
+                          className="px-2 py-1 bg-surface-container hover:bg-surface-container-high rounded text-xs font-semibold text-secondary hover:text-on-surface transition-colors cursor-pointer"
+                          title="Open College Dossier"
+                        >
+                          Dossier
+                        </button>
+                        <button
+                          onClick={() => onNavigate('college-contacts', college.name)}
+                          className="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded text-xs font-semibold transition-colors cursor-pointer"
+                          title="View in College Contacts"
+                        >
+                          Roster →
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Section Footer / Pagination & View All Link */}
+        <div className="mt-space-sm pt-space-xs flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-secondary">
+          <div className="flex items-center gap-2">
+            <span>
+              Showing {Math.min(dashboardPreviewLimit, missingPreviewColleges.length)} of {missingPreviewColleges.length.toLocaleString()} institutions for selected filter
+            </span>
+            {missingPreviewColleges.length > 6 && (
+              <button
+                onClick={() => setDashboardPreviewLimit(prev => (prev === 6 ? 25 : 6))}
+                className="font-semibold text-primary hover:underline cursor-pointer ml-1"
+              >
+                {dashboardPreviewLimit === 6 ? 'Show 25 records' : 'Collapse to 6'}
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={() => onNavigate('college-contacts', dashboardMissingFilter)}
+            className="font-semibold text-primary hover:text-primary-container flex items-center gap-1 cursor-pointer"
+          >
+            <span>View and sort all {missingPreviewColleges.length} in College Contacts</span>
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </button>
+        </div>
+      </section>
 
       {/* Primary Analytic & Activity Layout (2 Columns) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg mb-space-lg items-start">

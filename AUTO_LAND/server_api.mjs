@@ -141,8 +141,8 @@ export function getCollegesFromCsv(csvPath) {
       principalEmail: row.Official_Email || '',
       placementOfficerName: row.Department_Or_Contact || 'Placement & Career Development',
       placementOfficerEmail: row.Official_Email || '',
-      phone: row.Phone_Number || '+91-44-22358490',
-      website: row.Official_Website_URL || 'https://annauniv.edu',
+      phone: (row.Phone_Number || '').trim(),
+      website: (row.Official_Website_URL || '').trim(),
       status: status,
       lastContacted: row.Sent_Timestamp || undefined,
       notes: row.Notes_Or_Error || 'Verified institutional contact'

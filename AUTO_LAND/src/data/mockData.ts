@@ -1,10 +1,10 @@
 import { CollegeContact, ActivityFeedItem, EmailTemplate, Campaign, DispatchAuditRecord, SystemStats } from '../types';
 
 export const initialSystemStats: SystemStats = {
-  totalColleges: 125,
-  verifiedRecords: 15,
-  pendingQueue: 110,
-  dispatched: 15,
+  totalColleges: 1801,
+  verifiedRecords: 16,
+  pendingQueue: 341,
+  dispatched: 16,
   bouncedFailed: 0,
   deduplicated: 0,
   velocityThrottle: 45
